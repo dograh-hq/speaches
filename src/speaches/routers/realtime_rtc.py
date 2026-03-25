@@ -29,7 +29,6 @@ from pydantic import ValidationError
 from speaches.dependencies import (
     ConfigDependency,
     ExecutorRegistryDependency,
-    TranscriptionClientDependency,
 )
 from speaches.realtime.context import SessionContext
 from speaches.realtime.conversation_event_router import event_router as conversation_event_router
@@ -261,7 +260,6 @@ async def realtime_webrtc(
     request: Request,
     model: Annotated[str, Query(...)],
     config: ConfigDependency,
-    transcription_client: TranscriptionClientDependency,
     executor_registry: ExecutorRegistryDependency,
 ) -> Response:
     completion_client = AsyncOpenAI(
@@ -270,7 +268,7 @@ async def realtime_webrtc(
         max_retries=0,
     ).chat.completions
     ctx = SessionContext(
-        transcription_client=transcription_client,
+        executor_registry=executor_registry,
         completion_client=completion_client,
         vad_model_manager=executor_registry.vad.model_manager,
         session=create_session_object_configuration(model, "conversation", None, None),

@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import asyncio
-from io import BytesIO
 import logging
 import time
 from typing import TYPE_CHECKING
 
 import numpy as np
-from openai import omit
 from openai.types.beta.realtime.conversation_item_input_audio_transcription_completed_event import (
     UsageTranscriptTextUsageDuration,
 )
 from pydantic import BaseModel
-import soundfile as sf
 
+from speaches.audio import Audio
+from speaches.executors.shared.handler_protocol import TranscriptionRequest
+from speaches.executors.silero_vad_v5 import VadOptions
 from speaches.realtime.utils import generate_item_id, task_done_callback
+from speaches.routers.utils import find_executor_for_model_or_raise, get_model_card_data_or_raise
 from speaches.types.realtime import (
     ConversationItemContentInputAudio,
     ConversationItemInputAudioTranscriptionCompletedEvent,
@@ -25,8 +26,8 @@ from speaches.types.realtime import (
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
-    from openai.resources.audio import AsyncTranscriptions
 
+    from speaches.executors.shared.registry import ExecutorRegistry
     from speaches.realtime.conversation_event_router import Conversation
     from speaches.realtime.pubsub import EventPubSub
 
@@ -92,19 +93,43 @@ class InputAudioBufferTranscriber:
         self,
         *,
         pubsub: EventPubSub,
-        transcription_client: AsyncTranscriptions,
+        executor_registry: ExecutorRegistry,
         input_audio_buffer: InputAudioBuffer,
         session: Session,
         conversation: Conversation,
     ) -> None:
         self.pubsub = pubsub
-        self.transcription_client = transcription_client
+        self.executor_registry = executor_registry
         self.input_audio_buffer = input_audio_buffer
         self.session = session
         self.conversation = conversation
 
         self.task: asyncio.Task[None] | None = None
         self.events = asyncio.Queue[ServerEvent]()
+
+    def _transcribe(self) -> str:
+        """Run whisper transcription synchronously (called via asyncio.to_thread)."""
+        audio = Audio(
+            data=self.input_audio_buffer.data_w_vad_applied,
+            sample_rate=SAMPLE_RATE,
+        )
+        model = self.session.input_audio_transcription.model
+        model_card_data = get_model_card_data_or_raise(model)
+        executor = find_executor_for_model_or_raise(
+            model, model_card_data, self.executor_registry.transcription
+        )
+        request = TranscriptionRequest(
+            audio=audio,
+            model=model,
+            language=self.session.input_audio_transcription.language,
+            response_format="text",
+            speech_segments=[],  # Audio is already VAD-trimmed
+            vad_options=VadOptions(),
+            timestamp_granularities=["segment"],
+        )
+        result = executor.model_manager.handle_transcription_request(request)
+        # response_format="text" returns (text, "text/plain")
+        return result[0] if isinstance(result, tuple) else str(result)
 
     async def _handler(self) -> None:
         content_item = ConversationItemContentInputAudio(transcript=None, type="input_audio")
@@ -116,22 +141,8 @@ class InputAudioBufferTranscriber:
         )
         self.conversation.create_item(item)
 
-        file = BytesIO()
-        sf.write(
-            file,
-            self.input_audio_buffer.data_w_vad_applied,
-            samplerate=16000,
-            subtype="PCM_16",
-            endian="LITTLE",
-            format="wav",
-        )
         start = time.perf_counter()
-        transcript = await self.transcription_client.create(
-            file=file,
-            model=self.session.input_audio_transcription.model,
-            response_format="text",
-            language=self.session.input_audio_transcription.language or omit,
-        )
+        transcript = await asyncio.to_thread(self._transcribe)
         logger.info(f"Transcription generation took {time.perf_counter() - start:.2f} seconds")
         content_item.transcript = transcript
         self.pubsub.publish_nowait(

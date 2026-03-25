@@ -1,9 +1,9 @@
 from collections import OrderedDict
 from typing import TYPE_CHECKING
 
-from openai.resources.audio import AsyncTranscriptions
 from openai.resources.chat.completions import AsyncCompletions
 
+from speaches.executors.shared.registry import ExecutorRegistry
 from speaches.executors.silero_vad_v5 import SileroVADModelManager
 from speaches.realtime.conversation_event_router import Conversation
 from speaches.realtime.input_audio_buffer import InputAudioBuffer
@@ -17,12 +17,12 @@ if TYPE_CHECKING:
 class SessionContext:
     def __init__(
         self,
-        transcription_client: AsyncTranscriptions,
+        executor_registry: ExecutorRegistry,
         completion_client: AsyncCompletions,
         vad_model_manager: SileroVADModelManager,
         session: Session,
     ) -> None:
-        self.transcription_client = transcription_client
+        self.executor_registry = executor_registry
         self.completion_client = completion_client
         self.vad_model_manager = vad_model_manager
 
