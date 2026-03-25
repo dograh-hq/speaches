@@ -126,11 +126,11 @@ class KokoroModel(Model):
     voices: list[KokoroModelVoice]
 
 
-# Use a broader filter that matches the PyTorch model on HuggingFace
+# Match by model name substring only — hexgrad/Kokoro-82M has no
+# library_name or kokoro tag in its HuggingFace model card.
 hf_model_filter = HfModelFilter(
-    library_name="kokoro",
+    model_name="Kokoro",
     task=TASK_NAME_TAG,
-    tags={"kokoro"},
 )
 
 
@@ -215,15 +215,20 @@ class KokoroModelManager(BaseModelManager):
 
         with self.load_model(request.model) as pipeline:
             start = time.perf_counter()
-            # KPipeline yields (graphemes, phonemes, audio_numpy) tuples
+            # KPipeline yields (graphemes, phonemes, audio_tensor) tuples
             for _gs, _ps, audio_data in pipeline(
                 request.text,
                 voice=request.voice,
                 speed=request.speed,
-                lang_code=lang_code,
                 split_pattern=r"\n+",
             ):
                 if audio_data is not None and len(audio_data) > 0:
+                    # KPipeline returns PyTorch tensors, convert to numpy float32
+                    import numpy as np
+
+                    if hasattr(audio_data, "numpy"):
+                        audio_data = audio_data.cpu().numpy()
+                    audio_data = np.asarray(audio_data, dtype=np.float32)
                     yield Audio(audio_data, sample_rate=SAMPLE_RATE)
 
         logger.info(f"Generated audio for {len(request.text)} characters in {time.perf_counter() - start:.2f}s")
