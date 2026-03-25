@@ -44,7 +44,7 @@ class ExecutorRegistry:
         )
         self._kokoro_executor = Executor(
             name="kokoro",
-            model_manager=KokoroModelManager(config.tts_model_ttl, config.unstable_ort_opts),
+            model_manager=KokoroModelManager(config.tts_model_ttl),
             model_registry=kokoro_model_registry,
             task="text-to-speech",
         )
