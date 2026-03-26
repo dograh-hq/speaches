@@ -53,6 +53,9 @@ from speaches.routers.speech_embedding import (
 from speaches.routers.stt import (
     router as stt_router,
 )
+from speaches.routers.stt_ws import (
+    router as stt_ws_router,
+)
 from speaches.routers.vad import (
     router as vad_router,
 )
@@ -172,8 +175,9 @@ def create_app() -> FastAPI:
     app.include_router(vad_router, dependencies=http_dependencies)
     app.include_router(diarization_router, dependencies=http_dependencies)
 
-    # WebSocket router WITHOUT authentication (handles its own)
+    # WebSocket routers WITHOUT authentication (handle their own)
     app.include_router(realtime_ws_router)
+    app.include_router(stt_ws_router)
 
     # HACK: move this elsewhere
     app.get("/v1/realtime", include_in_schema=False)(lambda: RedirectResponse(url="/v1/realtime/"))
