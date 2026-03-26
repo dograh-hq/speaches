@@ -17,6 +17,7 @@ from speaches.hf_utils import (
     extract_language_list,
     get_cached_model_repos_info,
     get_model_card_data_from_cached_repo_info,
+    get_model_repo_path,
 )
 from speaches.model_registry import (
     ModelRegistry,
@@ -166,14 +167,13 @@ class KokoroModelRegistry(ModelRegistry):
                     voices=VOICES,
                 )
 
-    def get_model_files(self, model_id: str):
-        # KPipeline handles model file resolution internally
-        return None
+    def get_model_files(self, model_id: str) -> None:
+        repo_path = get_model_repo_path(model_id)
+        if repo_path is None:
+            raise FileNotFoundError(f"Model '{model_id}' is not installed locally")
 
     def download_model_files(self, model_id: str) -> None:
-        _model_repo_path_str = huggingface_hub.snapshot_download(
-            repo_id=model_id, repo_type="model"
-        )
+        _model_repo_path_str = huggingface_hub.snapshot_download(repo_id=model_id, repo_type="model")
 
 
 kokoro_model_registry = KokoroModelRegistry(hf_model_filter=hf_model_filter)
