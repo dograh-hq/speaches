@@ -168,7 +168,7 @@ async def handle_input_audio_buffer_committed(ctx: SessionContext, event: InputA
 
     transcriber = InputAudioBufferTranscriber(
         pubsub=ctx.pubsub,
-        transcription_client=ctx.transcription_client,
+        executor_registry=ctx.executor_registry,
         input_audio_buffer=input_audio_buffer,
         session=ctx.session,
         conversation=ctx.conversation,
