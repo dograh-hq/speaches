@@ -30,7 +30,8 @@ from speaches.tracing import traced, traced_generator
 
 # TODO: support model quants
 
-# LIBRARY_NAME = "onnx" # NOTE: library name is derived and not stored in the README
+HF_LIBRARY_NAME = "onnx"
+RUNTIME_BACKEND = "onnxruntime"
 TASK_NAME_TAG = "automatic-speech-recognition"
 # TAGS = {"nemo-conformer-tdt"} # NOTE: I've tried to use this tag however it seems to be derived (likely from config.json) and isn't present when parsing the local model card
 
@@ -105,7 +106,11 @@ class NemoConformerTdtModelRegistry(ModelRegistry[Model, NemoConformerTdtModelFi
         )
 
 
-parakeet_model_registry = NemoConformerTdtModelRegistry(hf_model_filter=hf_model_filter)
+parakeet_model_registry = NemoConformerTdtModelRegistry(
+    hf_model_filter=hf_model_filter,
+    hf_library_name=HF_LIBRARY_NAME,
+    runtime_backend=RUNTIME_BACKEND,
+)
 
 
 class ParakeetModelManager(BaseModelManager[TextResultsAsrAdapter]):

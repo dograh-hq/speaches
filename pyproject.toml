@@ -90,7 +90,14 @@ markers = [
 [tool.uv]
 required-version = "~=0.10"
 constraint-dependencies = ["llvmlite>=0.40.0"]
-override-dependencies = ["av~=15.0"]
+override-dependencies = ["av~=15.0", "onnxruntime-gpu>=1.25.0.dev20260326001"]
+
+[[tool.uv.index]]
+name = "ort-cuda13-nightly"
+url = "https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ort-cuda-13-nightly/pypi/simple/"
+
+[tool.uv.sources]
+onnxruntime-gpu = { index = "ort-cuda13-nightly" }
 
 # [tool.uv.sources]
 # piper-phonemize = [

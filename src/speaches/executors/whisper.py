@@ -42,14 +42,15 @@ if TYPE_CHECKING:
     from speaches.routers.stt import ResponseFormat
 
 
-LIBRARY_NAME = "ctranslate2"
+HF_LIBRARY_NAME = "ctranslate2"
+RUNTIME_BACKEND = "faster_whisper"
 TASK_NAME_TAG = "automatic-speech-recognition"
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
 
 hf_model_filter = HfModelFilter(
-    library_name=LIBRARY_NAME,
+    library_name=HF_LIBRARY_NAME,
     task=TASK_NAME_TAG,
 )
 
@@ -122,7 +123,11 @@ class WhisperModelRegistry(ModelRegistry[Model, WhisperModelFiles]):
         )
 
 
-whisper_model_registry = WhisperModelRegistry(hf_model_filter=hf_model_filter)
+whisper_model_registry = WhisperModelRegistry(
+    hf_model_filter=hf_model_filter,
+    hf_library_name=HF_LIBRARY_NAME,
+    runtime_backend=RUNTIME_BACKEND,
+)
 
 
 class WhisperModelManager(BaseModelManager[WhisperModel]):

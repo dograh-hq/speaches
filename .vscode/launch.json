@@ -2,11 +2,21 @@
   "version": "0.2.0",
   "configurations": [
     {
-        "name": "Uvicorn",
-        "type": "python",
-        "request": "launch",
-        "module": "uvicorn",
-        "args": ["speaches.main:create_app", "--factory", "--host", "0.0.0.0", "--reload"]
+      "name": "Uvicorn",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "python": "/home/ec2-user/speaches/.venv/bin/python",
+      "env": {
+        "LD_LIBRARY_PATH": "/home/ec2-user/speaches/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib:${env:LD_LIBRARY_PATH}"
+      },
+      "args": [
+        "speaches.main:create_app",
+        "--factory",
+        "--host",
+        "0.0.0.0",
+        "--reload"
+      ]
     }
   ]
 }

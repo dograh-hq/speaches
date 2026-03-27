@@ -3,6 +3,8 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from speaches.runtime import RuntimeBackendsConfig
+
 type Device = Literal["cpu", "cuda", "auto"]
 
 # https://github.com/OpenNMT/CTranslate2/blob/master/docs/quantization.md#quantize-on-model-conversion
@@ -98,6 +100,15 @@ class Config(BaseSettings):
     """
 
     whisper: WhisperConfig = WhisperConfig()
+    runtimes: RuntimeBackendsConfig = RuntimeBackendsConfig()
+    """
+    Runtime backend configuration. Backends can either run in-process or in an isolated Python environment.
+
+    Examples:
+    - `RUNTIMES__VLLM__MODE=isolated_python`
+    - `RUNTIMES__VLLM__PYTHON_EXECUTABLE=.venv-vllm/bin/python`
+    - `RUNTIMES__ONNXRUNTIME__MODE=in_process`
+    """
 
     # TODO: remove the underscore prefix from the field name
     _unstable_vad_filter: bool = True

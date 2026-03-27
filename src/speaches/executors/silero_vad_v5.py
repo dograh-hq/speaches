@@ -28,6 +28,8 @@ if TYPE_CHECKING:
 SAMPLE_RATE = 16000
 MODEL_ID = "silero_vad_v5"
 SAMPLE_RATE_MS = SAMPLE_RATE // 1000
+HF_LIBRARY_NAME = "onnx"
+RUNTIME_BACKEND = "onnxruntime"
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -162,7 +164,9 @@ class SileroVADModelRegistry(ModelRegistry):
 
 
 silero_vad_model_registry = SileroVADModelRegistry(
-    hf_model_filter=HfModelFilter(library_name="onnx", task="voice-activity-detection")
+    hf_model_filter=HfModelFilter(library_name=HF_LIBRARY_NAME, task="voice-activity-detection"),
+    hf_library_name=HF_LIBRARY_NAME,
+    runtime_backend=RUNTIME_BACKEND,
 )
 
 

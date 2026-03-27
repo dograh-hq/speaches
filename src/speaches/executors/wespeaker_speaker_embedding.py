@@ -23,7 +23,8 @@ from speaches.tracing import traced
 
 AVAILABLE_MODELS = {"Wespeaker/wespeaker-voxceleb-resnet34-LM"}
 
-# LIBRARY_NAME = "onnx"
+HF_LIBRARY_NAME = "onnx"
+RUNTIME_BACKEND = "onnxruntime"
 TASK_NAME_TAG = "speaker-embedding"
 # TAGS = {"pyannote"}
 
@@ -87,7 +88,11 @@ class WespeakerSpeakerEmbeddingModelRegistry(ModelRegistry):
         )
 
 
-wespeaker_speaker_embedding_model_registry = WespeakerSpeakerEmbeddingModelRegistry(hf_model_filter=hf_model_filter)
+wespeaker_speaker_embedding_model_registry = WespeakerSpeakerEmbeddingModelRegistry(
+    hf_model_filter=hf_model_filter,
+    hf_library_name=HF_LIBRARY_NAME,
+    runtime_backend=RUNTIME_BACKEND,
+)
 
 
 class WespeakerSpeakerEmbeddingModelManager(BaseModelManager[InferenceSession]):

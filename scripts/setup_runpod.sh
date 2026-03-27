@@ -26,8 +26,18 @@ if command -v apt-get &>/dev/null; then
     apt-get install -y -qq ffmpeg espeak-ng libcudnn9-cuda-12 > /dev/null 2>&1 || \
         apt-get install -y -qq ffmpeg espeak-ng > /dev/null
     echo "Installed ffmpeg, espeak-ng, and cuDNN (if available)"
+elif command -v dnf &>/dev/null; then
+    dnf install -y espeak-ng > /dev/null 2>&1 || echo "WARNING: failed to install espeak-ng via dnf"
+    if ! command -v ffmpeg &>/dev/null; then
+        echo "ffmpeg not in dnf repos, installing static build..."
+        curl -LsS -o /tmp/ffmpeg-static.tar.xz https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+        tar xf /tmp/ffmpeg-static.tar.xz -C /tmp
+        cp /tmp/ffmpeg-*-amd64-static/ffmpeg /tmp/ffmpeg-*-amd64-static/ffprobe /usr/local/bin/
+        rm -rf /tmp/ffmpeg-static.tar.xz /tmp/ffmpeg-*-amd64-static
+        echo "Installed ffmpeg from static build"
+    fi
 else
-    echo "WARNING: apt-get not available. Ensure ffmpeg and espeak-ng are installed."
+    echo "WARNING: no supported package manager found. Ensure ffmpeg and espeak-ng are installed."
 fi
 
 # --- Python environment ---
@@ -50,10 +60,13 @@ echo "Installing dependencies..."
 source .venv/bin/activate
 uv sync
 
-# Install PyTorch with CUDA support (uv sync installs CPU-only by default)
+# uv sync installs CPU-only torch by default. On CUDA machines, the system
+# LD_LIBRARY_PATH may contain an older cuDNN that shadows the pip-bundled one.
+# Prepend the venv's cuDNN lib path so PyTorch finds its matching version.
 if command -v nvidia-smi &>/dev/null; then
-    echo "NVIDIA GPU detected, installing PyTorch with CUDA..."
-    uv pip install torch --index-url https://download.pytorch.org/whl/cu126
+    echo "NVIDIA GPU detected"
+    CUDNN_LIB=$(python -c "from pathlib import Path; import nvidia.cudnn; print(Path(nvidia.cudnn.__file__).parent / 'lib')" 2>/dev/null) && \
+        export LD_LIBRARY_PATH="${CUDNN_LIB}:${LD_LIBRARY_PATH:-}"
 else
     echo "No NVIDIA GPU detected, using CPU PyTorch"
 fi

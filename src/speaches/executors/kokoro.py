@@ -26,6 +26,7 @@ from speaches.tracing import traced_generator
 
 SAMPLE_RATE = 24000  # the default sample rate for Kokoro
 TASK_NAME_TAG = "text-to-speech"
+RUNTIME_BACKEND = "kokoro"
 
 # HuggingFace model ID for the PyTorch Kokoro model
 PYTORCH_MODEL_ID = "hexgrad/Kokoro-82M"
@@ -176,7 +177,10 @@ class KokoroModelRegistry(ModelRegistry):
         _model_repo_path_str = huggingface_hub.snapshot_download(repo_id=model_id, repo_type="model")
 
 
-kokoro_model_registry = KokoroModelRegistry(hf_model_filter=hf_model_filter)
+kokoro_model_registry = KokoroModelRegistry(
+    hf_model_filter=hf_model_filter,
+    runtime_backend=RUNTIME_BACKEND,
+)
 
 
 class KokoroModelManager(BaseModelManager):
@@ -187,7 +191,7 @@ class KokoroModelManager(BaseModelManager):
         from kokoro import KPipeline
 
         # Default to American English; voice-specific lang is set per request
-        return KPipeline(lang_code="a")
+        return KPipeline(lang_code="a", repo_id=PYTORCH_MODEL_ID)
 
     @traced_generator()
     def handle_speech_request(

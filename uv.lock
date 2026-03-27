@@ -14,7 +14,10 @@ members = [
     "speaches-cli",
 ]
 constraints = [{ name = "llvmlite", specifier = ">=0.40.0" }]
-overrides = [{ name = "av", specifier = "~=15.0" }]
+overrides = [
+    { name = "av", specifier = "~=15.0" },
+    { name = "onnxruntime-gpu", specifier = ">=1.25.0.dev20260326001", index = "https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ort-cuda-13-nightly/pypi/simple/" },
+]
 
 [[package]]
 name = "addict"
@@ -1699,7 +1702,7 @@ dependencies = [
     { name = "kaldi-native-fbank" },
     { name = "onnx-dl" },
     { name = "onnxruntime", marker = "platform_machine != 'x86_64'" },
-    { name = "onnxruntime-gpu", marker = "platform_machine == 'x86_64'" },
+    { name = "onnxruntime-gpu" },
     { name = "pyannote-core" },
     { name = "scikit-learn" },
     { name = "scipy" },
@@ -1742,18 +1745,17 @@ wheels = [
 
 [[package]]
 name = "onnxruntime-gpu"
-version = "1.24.4"
-source = { registry = "https://pypi.org/simple" }
+version = "1.25.0.dev20260326001"
+source = { registry = "https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ort-cuda-13-nightly/pypi/simple/" }
 dependencies = [
-    { name = "flatbuffers", marker = "platform_machine == 'x86_64' or sys_platform != 'linux'" },
-    { name = "numpy", marker = "platform_machine == 'x86_64' or sys_platform != 'linux'" },
-    { name = "packaging", marker = "platform_machine == 'x86_64' or sys_platform != 'linux'" },
-    { name = "protobuf", marker = "platform_machine == 'x86_64' or sys_platform != 'linux'" },
-    { name = "sympy", marker = "platform_machine == 'x86_64' or sys_platform != 'linux'" },
+    { name = "flatbuffers" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "protobuf" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/2c/5b3fd4748cf7ed291eae541a37e426efc20ea04cb6e6a05768304ab0aa41/onnxruntime_gpu-1.24.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:eb0e38f0c1ef3b76ae0081c8e51eed20dd8925aa916f0fc6f9b8b17d05610e99", size = 252765531, upload-time = "2026-03-17T22:03:57.528Z" },
-    { url = "https://files.pythonhosted.org/packages/f2/86/70cecfdab1e963cc7f8c11e72040dfcd5cff85b1de2de74deba9611e0059/onnxruntime_gpu-1.24.4-cp312-cp312-win_amd64.whl", hash = "sha256:da5c1e327d8e119a831be2790e69f93cf6daab9145ed0aca7577f412a620f709", size = 207197978, upload-time = "2026-03-17T21:58:38.43Z" },
+    { url = "https://aiinfra.pkgs.visualstudio.com/2692857e-05ef-43b4-ba9c-ccf1c22c437c/_packaging/22685817-9e91-4967-bafe-94c9843c26a9/pypi/download/onnxruntime-gpu/1.25.dev20260326001/onnxruntime_gpu-1.25.0.dev20260326001-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:00d7ec7d371774982d03d2994c8d786637ae03f87fc0bdecea1a32cbecd146fe" },
+    { url = "https://aiinfra.pkgs.visualstudio.com/2692857e-05ef-43b4-ba9c-ccf1c22c437c/_packaging/22685817-9e91-4967-bafe-94c9843c26a9/pypi/download/onnxruntime-gpu/1.25.dev20260326001/onnxruntime_gpu-1.25.0.dev20260326001-cp312-cp312-win_amd64.whl", hash = "sha256:d826e2bb6428f1d1db7fbc8f8c03e852613d52db2c0983c0134a4d596052f20a" },
 ]
 
 [[package]]

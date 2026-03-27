@@ -24,47 +24,57 @@ from speaches.executors.whisper import WhisperModelManager, whisper_model_regist
 
 class ExecutorRegistry:
     def __init__(self, config: Config) -> None:
+        self._runtime_backends = config.runtimes
         self._whisper_executor = Executor(
             name="whisper",
             model_manager=WhisperModelManager(config.stt_model_ttl, config.whisper),
             model_registry=whisper_model_registry,
             task="automatic-speech-recognition",
+            runtime_config=self._runtime_backends.get_backend(whisper_model_registry.runtime_backend),
         )
         self._parakeet_executor = Executor(
             name="parakeet",
             model_manager=ParakeetModelManager(config.stt_model_ttl, config.unstable_ort_opts),
             model_registry=parakeet_model_registry,
             task="automatic-speech-recognition",
+            runtime_config=self._runtime_backends.get_backend(parakeet_model_registry.runtime_backend),
         )
         self._piper_executor = Executor(
             name="piper",
             model_manager=PiperModelManager(config.tts_model_ttl, config.unstable_ort_opts),
             model_registry=piper_model_registry,
             task="text-to-speech",
+            runtime_config=self._runtime_backends.get_backend(piper_model_registry.runtime_backend),
         )
         self._kokoro_executor = Executor(
             name="kokoro",
             model_manager=KokoroModelManager(config.tts_model_ttl),
             model_registry=kokoro_model_registry,
             task="text-to-speech",
+            runtime_config=self._runtime_backends.get_backend(kokoro_model_registry.runtime_backend),
         )
         self._wespeaker_speaker_embedding_executor = Executor(
             name="wespeaker-speaker-embedding",
             model_manager=WespeakerSpeakerEmbeddingModelManager(0, config.unstable_ort_opts),  # HACK: hardcoded ttl
             model_registry=wespeaker_speaker_embedding_model_registry,
             task="speaker-embedding",
+            runtime_config=self._runtime_backends.get_backend(wespeaker_speaker_embedding_model_registry.runtime_backend),
         )
         self._pyannote_speaker_segmentation_executor = Executor(
             name="pyannote-speaker-segmentation",
             model_manager=PyannoteSpeakerSegmentationModelManager(0, config.unstable_ort_opts),  # HACK: hardcoded ttl
             model_registry=pyannote_speaker_segmentation_model_registry,
             task="voice-activity-detection",
+            runtime_config=self._runtime_backends.get_backend(
+                pyannote_speaker_segmentation_model_registry.runtime_backend
+            ),
         )
         self._vad_executor = Executor(
             name="vad",
             model_manager=SileroVADModelManager(config.vad_model_ttl, config.unstable_ort_opts),
             model_registry=silero_vad_model_registry,
             task="voice-activity-detection",
+            runtime_config=self._runtime_backends.get_backend(silero_vad_model_registry.runtime_backend),
         )
 
     @property
@@ -101,6 +111,15 @@ class ExecutorRegistry:
             self._pyannote_speaker_segmentation_executor,
             self._vad_executor,
         )
+
+    def executors_by_runtime_backend(self) -> dict[str, tuple[Executor, ...]]:
+        grouped: dict[str, list[Executor]] = {}
+        for executor in self.all_executors():
+            runtime_backend = executor.runtime_backend
+            if runtime_backend is None:
+                continue
+            grouped.setdefault(runtime_backend, []).append(executor)
+        return {runtime_backend: tuple(executors) for runtime_backend, executors in grouped.items()}
 
     def download_model_by_id(self, model_id: str) -> bool:
         for executor in self.all_executors():

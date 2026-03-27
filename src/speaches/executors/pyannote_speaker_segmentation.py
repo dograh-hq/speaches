@@ -16,7 +16,8 @@ from speaches.hf_utils import (
 )
 from speaches.model_registry import ModelRegistry
 
-LIBRARY_NAME = "onnx"
+HF_LIBRARY_NAME = "onnx"
+RUNTIME_BACKEND = "onnxruntime"
 TASK_NAME_TAG = "speaker-segmentation"
 TAGS = {"pyannote"}
 
@@ -27,7 +28,7 @@ class PyannoteModelFiles(BaseModel):
 
 
 hf_model_filter = HfModelFilter(
-    library_name=LIBRARY_NAME,
+    library_name=HF_LIBRARY_NAME,
     task=TASK_NAME_TAG,
     tags=TAGS,
 )
@@ -80,7 +81,11 @@ class PyannoteSpeakerSegmentationModelRegistry(ModelRegistry):
         )
 
 
-pyannote_speaker_segmentation_model_registry = PyannoteSpeakerSegmentationModelRegistry(hf_model_filter=hf_model_filter)
+pyannote_speaker_segmentation_model_registry = PyannoteSpeakerSegmentationModelRegistry(
+    hf_model_filter=hf_model_filter,
+    hf_library_name=HF_LIBRARY_NAME,
+    runtime_backend=RUNTIME_BACKEND,
+)
 
 
 class PyannoteSpeakerSegmentationModelManager(BaseModelManager[InferenceSession]):

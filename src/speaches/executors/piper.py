@@ -36,7 +36,8 @@ PIPER_VOICE_QUALITY_SAMPLE_RATE_MAP: dict[PiperVoiceQuality, int] = {
 }
 
 
-LIBRARY_NAME = "onnx"
+HF_LIBRARY_NAME = "onnx"
+RUNTIME_BACKEND = "onnxruntime"
 TASK_NAME_TAG = "text-to-speech"
 TAGS = {"speaches", "piper"}
 
@@ -62,7 +63,7 @@ class PiperModel(Model):
 
 
 hf_model_filter = HfModelFilter(
-    library_name=LIBRARY_NAME,
+    library_name=HF_LIBRARY_NAME,
     task=TASK_NAME_TAG,
     tags=TAGS,
 )
@@ -168,7 +169,11 @@ class PiperModelRegistry(ModelRegistry):
         )
 
 
-piper_model_registry = PiperModelRegistry(hf_model_filter=hf_model_filter)
+piper_model_registry = PiperModelRegistry(
+    hf_model_filter=hf_model_filter,
+    hf_library_name=HF_LIBRARY_NAME,
+    runtime_backend=RUNTIME_BACKEND,
+)
 
 
 class PiperModelManager(BaseModelManager["PiperVoice"]):
