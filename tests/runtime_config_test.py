@@ -12,6 +12,14 @@ def test_default_runtime_modes_are_split_by_backend() -> None:
     assert config.runtimes.vllm_omni.mode == "isolated_python"
     assert config.runtimes.vllm.python_executable == ".venv-vllm/bin/python"
     assert config.runtimes.vllm_omni.python_executable == ".venv-vllm/bin/python"
+    assert config.runtimes.vllm.startup_timeout_seconds == 300
+    assert config.runtimes.vllm_omni.startup_timeout_seconds == 300
+    assert config.runtimes.vllm.gpu_memory_utilization == 0.25
+    assert config.runtimes.vllm.kv_cache_memory_bytes == 8 * 1024 * 1024 * 1024
+    assert config.runtimes.vllm.max_model_len == 4096
+    assert config.runtimes.vllm.max_num_seqs == 1
+    assert config.runtimes.vllm.max_num_batched_tokens == 4096
+    assert config.runtimes.vllm_omni.stage_configs_path is None
 
 
 def test_executor_registry_assigns_runtime_config_by_backend() -> None:
@@ -23,6 +31,10 @@ def test_executor_registry_assigns_runtime_config_by_backend() -> None:
     assert executor_registry.text_to_speech[0].runtime_backend == "onnxruntime"
     assert executor_registry.text_to_speech[1].runtime_backend == "kokoro"
     assert executor_registry.text_to_speech[1].runtime_mode == "in_process"
+    assert executor_registry.text_to_speech[2].runtime_backend == "vllm_omni"
+    assert executor_registry.text_to_speech[2].runtime_mode == "isolated_python"
+    assert executor_registry.transcription[2].runtime_backend == "vllm"
+    assert executor_registry.transcription[2].runtime_mode == "isolated_python"
 
 
 def test_executor_registry_groups_executors_by_runtime_backend() -> None:
@@ -44,6 +56,12 @@ def test_executor_registry_groups_executors_by_runtime_backend() -> None:
         "wespeaker-speaker-embedding",
         "pyannote-speaker-segmentation",
         "vad",
+    }
+    assert {executor.name for executor in executor_registry.executors_by_runtime_backend()["vllm_omni"]} == {
+        "voxtral"
+    }
+    assert {executor.name for executor in executor_registry.executors_by_runtime_backend()["vllm"]} == {
+        "voxtral-mini"
     }
     assert all(
         executor.runtime_mode == "isolated_python"

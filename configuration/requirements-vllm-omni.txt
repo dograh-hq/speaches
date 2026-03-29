@@ -1,3 +1,4 @@
+ninja==1.13.0
 vllm>=0.18.0
 vllm-omni @ git+https://github.com/vllm-project/vllm-omni.git
 mistral-common>=1.10.0

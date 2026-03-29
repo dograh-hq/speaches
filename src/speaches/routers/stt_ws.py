@@ -18,8 +18,14 @@ from speaches.dependencies import (
     ConfigDependency,
     ExecutorRegistryDependency,
 )
-from speaches.executors.shared.handler_protocol import TranscriptionRequest
-from speaches.executors.silero_vad_v5 import VadOptions
+from speaches.executors.shared.handler_protocol import (
+    TranscriptionRequest,
+    VadRequest,
+)
+from speaches.executors.silero_vad_v5 import (
+    SpeechTimestamp,
+    VadOptions,
+)
 from speaches.realtime.utils import verify_websocket_api_key
 from speaches.routers.utils import find_executor_for_model_or_raise, get_model_card_data_or_raise
 
@@ -28,6 +34,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["speech-to-text"])
 
 SAMPLE_RATE = 16000
+DEFAULT_VAD_OPTIONS = VadOptions(min_silence_duration_ms=160, max_speech_duration_s=30)
 
 
 def _transcribe(
@@ -37,15 +44,26 @@ def _transcribe(
     executor_registry: "ExecutorRegistryDependency",
 ) -> tuple[str, float]:
     audio = Audio(data=audio_data, sample_rate=SAMPLE_RATE)
+    vad_request = VadRequest(audio=audio, vad_options=DEFAULT_VAD_OPTIONS)
+    speech_segments = executor_registry.vad.model_manager.handle_vad_request(vad_request)
+
+    if not speech_segments:
+        return "", 0.0
+
+    first_speech_start = speech_segments[0].start
+    trimmed_audio_data = audio_data[first_speech_start:]
+    trimmed_audio = Audio(data=trimmed_audio_data, sample_rate=SAMPLE_RATE)
+    trimmed_speech_segments = [SpeechTimestamp(start=0, end=len(trimmed_audio_data))]
+
     model_card_data = get_model_card_data_or_raise(model)
     executor = find_executor_for_model_or_raise(model, model_card_data, executor_registry.transcription)
     request = TranscriptionRequest(
-        audio=audio,
+        audio=trimmed_audio,
         model=model,
         language=language,
         response_format="text",
-        speech_segments=[],
-        vad_options=VadOptions(),
+        speech_segments=trimmed_speech_segments,
+        vad_options=DEFAULT_VAD_OPTIONS,
         timestamp_granularities=["segment"],
     )
     start = time.perf_counter()
@@ -129,9 +147,13 @@ async def stt_stream(
                         audio_buffer = np.array([], dtype=np.float32)
                         continue
 
-                    text, elapsed = await asyncio.to_thread(
-                        _transcribe, audio_buffer, model, language, executor_registry
-                    )
+                    try:
+                        text, elapsed = await asyncio.to_thread(
+                            _transcribe, audio_buffer, model, language, executor_registry
+                        )
+                    except Exception as error:
+                        await ws.send_json({"type": "error", "message": str(error)})
+                        continue
                     logger.info(
                         f"Transcription took {elapsed:.2f}s for {len(audio_buffer) / SAMPLE_RATE:.2f}s of audio"
                     )

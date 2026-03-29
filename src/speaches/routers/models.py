@@ -13,7 +13,8 @@ from speaches.api_types import (
 )
 from speaches.dependencies import ExecutorRegistryDependency
 from speaches.executors.kokoro import KokoroModel, KokoroModelVoice
-from speaches.executors.piper import PiperModel
+from speaches.executors.piper import PiperModel, PiperModelVoice
+from speaches.executors.voxtral import VoxtralModel, VoxtralModelVoice
 from speaches.hf_utils import delete_local_model_repo
 from speaches.model_aliases import ModelId
 
@@ -50,15 +51,15 @@ def list_local_audio_models(
 
 
 class ListVoicesResponse(BaseModel):
-    voices: list[KokoroModelVoice | PiperModel]
+    voices: list[KokoroModelVoice | PiperModelVoice | VoxtralModelVoice]
 
 
 # HACK: returning ListModelsResponse directly causes extra `Model` fields to be omitted
-@router.get("/v1/audio/voices", response_model=ListModelsResponse)
+@router.get("/v1/audio/voices", response_model=ListVoicesResponse)
 def list_local_audio_voices(
     executor_registry: ExecutorRegistryDependency,
 ) -> JSONResponse:
-    models: list[KokoroModel | PiperModel] = []
+    models: list[KokoroModel | PiperModel | VoxtralModel] = []
     for executor in executor_registry.text_to_speech:
         models.extend(list(executor.model_registry.list_local_models()))
     voices = [voice for model in models for voice in model.voices]

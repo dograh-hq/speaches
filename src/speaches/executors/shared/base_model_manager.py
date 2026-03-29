@@ -39,11 +39,13 @@ class SelfDisposingModel[T]:
         self,
         model_id: str,
         load_fn: Callable[[], T],
+        unload_fn: Callable[[T], None] | None,
         ttl: int,
         model_unloaded_callback: Callable[[str], None] | None = None,
     ) -> None:
         self.model_id = model_id
         self.load_fn = load_fn
+        self.unload_fn = unload_fn
         self.ttl = ttl
         self.model_unloaded_callback = model_unloaded_callback
 
@@ -60,6 +62,8 @@ class SelfDisposingModel[T]:
                 raise ValueError(f"Model {self.model_id} is still in use. {self.ref_count=}")
             if self.expire_timer:
                 self.expire_timer.cancel()
+            if self.model is not None and self.unload_fn is not None:
+                self.unload_fn(self.model)
             self.model = None
             gc.collect()
             logger.info(f"Model {self.model_id} unloaded")
@@ -119,6 +123,9 @@ class BaseModelManager[T](ABC):
     def _load_fn(self, model_id: str) -> T:
         pass
 
+    def _unload_fn(self, model: T) -> None:
+        pass
+
     def _handle_model_unloaded(self, model_id: str) -> None:
         with self._lock:
             if model_id in self.loaded_models:
@@ -140,6 +147,7 @@ class BaseModelManager[T](ABC):
             self.loaded_models[model_id] = SelfDisposingModel[T](
                 model_id,
                 load_fn=lambda: self._load_fn(model_id),
+                unload_fn=self._unload_fn,
                 ttl=self.ttl,
                 model_unloaded_callback=self._handle_model_unloaded,
             )

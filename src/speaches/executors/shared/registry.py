@@ -15,6 +15,8 @@ from speaches.executors.parakeet import ParakeetModelManager, parakeet_model_reg
 from speaches.executors.piper import PiperModelManager, piper_model_registry
 from speaches.executors.shared.executor import Executor
 from speaches.executors.silero_vad_v5 import SileroVADModelManager, silero_vad_model_registry
+from speaches.executors.voxtral_mini import VoxtralMiniModelManager, voxtral_mini_model_registry
+from speaches.executors.voxtral import VoxtralModelManager, voxtral_model_registry
 from speaches.executors.wespeaker_speaker_embedding import (
     WespeakerSpeakerEmbeddingModelManager,
     wespeaker_speaker_embedding_model_registry,
@@ -39,6 +41,16 @@ class ExecutorRegistry:
             task="automatic-speech-recognition",
             runtime_config=self._runtime_backends.get_backend(parakeet_model_registry.runtime_backend),
         )
+        self._voxtral_mini_executor = Executor(
+            name="voxtral-mini",
+            model_manager=VoxtralMiniModelManager(
+                config.stt_model_ttl,
+                self._runtime_backends.get_backend(voxtral_mini_model_registry.runtime_backend),
+            ),
+            model_registry=voxtral_mini_model_registry,
+            task="automatic-speech-recognition",
+            runtime_config=self._runtime_backends.get_backend(voxtral_mini_model_registry.runtime_backend),
+        )
         self._piper_executor = Executor(
             name="piper",
             model_manager=PiperModelManager(config.tts_model_ttl, config.unstable_ort_opts),
@@ -52,6 +64,16 @@ class ExecutorRegistry:
             model_registry=kokoro_model_registry,
             task="text-to-speech",
             runtime_config=self._runtime_backends.get_backend(kokoro_model_registry.runtime_backend),
+        )
+        self._voxtral_executor = Executor(
+            name="voxtral",
+            model_manager=VoxtralModelManager(
+                config.tts_model_ttl,
+                self._runtime_backends.get_backend(voxtral_model_registry.runtime_backend),
+            ),
+            model_registry=voxtral_model_registry,
+            task="text-to-speech",
+            runtime_config=self._runtime_backends.get_backend(voxtral_model_registry.runtime_backend),
         )
         self._wespeaker_speaker_embedding_executor = Executor(
             name="wespeaker-speaker-embedding",
@@ -79,7 +101,7 @@ class ExecutorRegistry:
 
     @property
     def transcription(self):  # noqa: ANN201
-        return (self._whisper_executor, self._parakeet_executor)
+        return (self._whisper_executor, self._parakeet_executor, self._voxtral_mini_executor)
 
     @property
     def translation(self):  # noqa: ANN201
@@ -87,7 +109,7 @@ class ExecutorRegistry:
 
     @property
     def text_to_speech(self):  # noqa: ANN201
-        return (self._piper_executor, self._kokoro_executor)
+        return (self._piper_executor, self._kokoro_executor, self._voxtral_executor)
 
     @property
     def speaker_embedding(self):  # noqa: ANN201
@@ -105,8 +127,10 @@ class ExecutorRegistry:
         return (
             self._whisper_executor,
             self._parakeet_executor,
+            self._voxtral_mini_executor,
             self._piper_executor,
             self._kokoro_executor,
+            self._voxtral_executor,
             self._wespeaker_speaker_embedding_executor,
             self._pyannote_speaker_segmentation_executor,
             self._vad_executor,
